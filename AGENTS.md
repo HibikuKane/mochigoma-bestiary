@@ -1,6 +1,6 @@
 # Working agreement for coding agents
 
-This repository is a lab for disposable twelve-shogi roguelike experiments.
+This repository builds Mochigoma Bestiary, a web roguelike that uses twelve-shogi rules as its core ingredient (see [project goals](docs/project-goals.md)). Rule and balance hypotheses are still built cheaply, compared, and discarded as described in the [experiment charter](docs/experiment-charter.md).
 
 ## Required workflow (effective 2026-09-06)
 
