@@ -7,7 +7,7 @@ import type { Locale, Messages } from "./types";
 export type { Locale, Messages } from "./types";
 export const localeNames: Record<Locale, string> = { ko: "한국어", ja: "日本語", en: "English" };
 export const dictionaries: Record<Locale, Messages> = { ko, ja, en };
-export const LOCALE_STORAGE_KEY = "twelve-shogi-lab.locale";
+export const LOCALE_STORAGE_KEY = "mochigoma-bestiary.locale";
 
 export function isLocale(value: unknown): value is Locale {
   return value === "ko" || value === "ja" || value === "en";

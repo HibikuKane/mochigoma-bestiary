@@ -1,6 +1,6 @@
 ---
 name: twelve-shogi-review
-description: Independently review a twelve-shogi-lab PR for whether its actual changes fulfill the stated purpose, stay in scope, and preserve game and repository constraints. Use when assigned a review rather than implementation.
+description: Independently review a mochigoma-bestiary PR for whether its actual changes fulfill the stated purpose, stay in scope, and preserve game and repository constraints. Use when assigned a review rather than implementation.
 ---
 
 # Twelve Shogi: independent review

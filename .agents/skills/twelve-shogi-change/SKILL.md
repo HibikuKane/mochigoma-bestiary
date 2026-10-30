@@ -1,6 +1,6 @@
 ---
 name: twelve-shogi-change
-description: Plan, implement, and hand off purpose-scoped changes in HibikuKane/twelve-shogi-lab through a feature branch and reviewed PR. Use for this repository's requested development or session handoff.
+description: Plan, implement, and hand off purpose-scoped changes in HibikuKane/mochigoma-bestiary through a feature branch and reviewed PR. Use for this repository's requested development or session handoff.
 ---
 
 # Twelve Shogi: change workflow
