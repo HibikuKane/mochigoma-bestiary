@@ -74,7 +74,7 @@ src/experiments/   ruleset 목록과 메타데이터
 src/i18n/          한·일·영 사전, 언어 선택, 대국 메시지 번역
 src/ui/            브라우저 인터페이스
 tests/             규칙·AI·UI 회귀 테스트
-docs/              목표, 로드맵, 실험 기록, 인계
+docs/              목표, 규칙 사양, 로드맵, 실험 기록, 인계
 .agents/skills/    이 저장소의 변경·독립 리뷰 절차 (.claude/skills/는 이 폴더의 심볼릭 링크)
 .github/           PR 템플릿, PR 검증, main 배포
 ```

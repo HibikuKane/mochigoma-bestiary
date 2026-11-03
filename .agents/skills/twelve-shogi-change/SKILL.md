@@ -5,7 +5,7 @@ description: Plan, implement, and hand off purpose-scoped changes in HibikuKane/
 
 # Twelve Shogi: change workflow
 
-Use the repository's `AGENTS.md` and [CONTRIBUTING.md](../../../CONTRIBUTING.md) as the workflow source. Read [goals](../../../docs/project-goals.md), [roadmap](../../../docs/roadmap.md), and [handoff](../../../docs/handoff.md) for task context; inspect current remote state because the handoff is dated.
+Use the repository's `AGENTS.md` and [CONTRIBUTING.md](../../../CONTRIBUTING.md) as the workflow source. Read [goals](../../../docs/project-goals.md), [roadmap](../../../docs/roadmap.md), [roguelike spec](../../../docs/roguelike-spec.md), and [handoff](../../../docs/handoff.md) for task context; inspect current remote state because the handoff is dated.
 
 ## Start a bounded change
 
