@@ -51,6 +51,8 @@ export class LabApp {
   private locale: Locale = loadLocale(navigator.languages, () => window.localStorage);
   private confirmRestart = false;
   private mode: GameMode = "run";
+  /** Set when a battle has just ended, so the next render brings the run panel into view. */
+  private focusRunPanel = false;
   /** Provisional development control; see SEARCH_DEPTHS. */
   private searchDepth = standardClassicProfile.searchDepth;
   private thinking = false;
@@ -105,7 +107,12 @@ export class LabApp {
   /** Apply a move and, in a run, let a finished battle advance the run. */
   private commit(next: GameState): void {
     this.state = next;
-    if (this.mode === "run") this.run = finishBattle(this.run, next.result);
+    if (this.mode !== "run") return;
+    const before = this.run.phase;
+    this.run = finishBattle(this.run, next.result);
+    // The reward or result panel sits below the board, often off screen on a
+    // phone; move focus (and the view) to it once rendered.
+    if (before === "battle" && this.run.phase !== "battle") this.focusRunPanel = true;
   }
 
   /** Search depth the AI uses right now: the stage's in a run, the chosen one otherwise. */
@@ -395,7 +402,7 @@ export class LabApp {
     if (run.phase === "battle") return "";
     if (run.phase === "reward") {
       const options = run.rewardOptions.map((kind, index) => `<button class="reward" data-reward-index="${index}"
-        data-focus="reward-${index}" aria-label="${escape(m.takeReward(m.pieces[kind]))}" ${this.confirmRestart ? "disabled" : ""}>
+        data-focus="reward-${index}" aria-label="${escape(`${m.takeReward(m.pieces[kind])}. ${m.movement[kind]}`)}" ${this.confirmRestart ? "disabled" : ""}>
         <span class="reward__glyph" aria-hidden="true">${GLYPHS[kind]}</span>
         <span class="reward__text"><strong>${escape(m.pieces[kind])}</strong><span>${escape(m.movement[kind])}</span></span>
       </button>`).join("");
@@ -466,6 +473,12 @@ export class LabApp {
     if (focused) {
       const next = Array.from(this.root.querySelectorAll<HTMLElement>("[data-focus]")).find((element) => element.dataset.focus === focused);
       (next ?? this.root.querySelector<HTMLElement>("[data-reset]"))?.focus({ preventScroll: true });
+    }
+    if (this.focusRunPanel) {
+      this.focusRunPanel = false;
+      const panel = this.root.querySelector<HTMLElement>(".run-panel");
+      panel?.querySelector<HTMLButtonElement>("button:not([disabled])")?.focus({ preventScroll: true });
+      panel?.scrollIntoView?.({ block: "center" });
     }
     // The screen now matches the state, so decide from that state alone whether
     // the AI still owes a move. No caller has to remember to ask.

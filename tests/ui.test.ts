@@ -262,4 +262,29 @@ describe("roguelike run in the UI", () => {
     click(root, "[data-confirm-reset]");
     expect(stageText(root)).toContain("전투 1/2");
   });
+
+  it("moves focus to the reward choice when a battle is won", () => {
+    const root = mountRun([quickWin, quickWin]);
+    tap(root, 9);
+    tap(root, 6);
+    expect(document.activeElement?.getAttribute("data-reward-index")).toBe("0");
+  });
+
+  it("moves focus to the new-run button when the run is lost", () => {
+    const root = mountRun([trap]);
+    tap(root, 10);
+    tap(root, 6);
+    vi.runAllTimers();
+    expect(document.activeElement?.hasAttribute("data-new-run")).toBe(true);
+  });
+
+  it("drops an AI reply that was still pending when a new run started", () => {
+    const root = mountRun();
+    playSouthMove(root);
+    click(root, "[data-reset]");
+    click(root, "[data-confirm-reset]");
+    vi.runAllTimers();
+    expect(turnText(root)).toContain("남쪽");
+    expect(turnText(root)).toContain("1수");
+  });
 });
