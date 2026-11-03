@@ -63,7 +63,12 @@ function farRank(player: Player): number {
   return player === "south" ? 0 : BOARD_ROWS - 1;
 }
 
-/** Squares the attacker could move onto next turn. A stunned piece attacks nothing. */
+/**
+ * Squares the attacker could move onto on its turn. A stunned piece is left
+ * out. That is exact on its owner's turn; on the captor's turn the stun ends
+ * before the owner moves again, so evaluation heuristics that read this then
+ * slightly underrate the stunned lion. Legality never relies on it.
+ */
 function attackedSquares(board: Board, attacker: Player): ReadonlySet<number> {
   const squares = new Set<number>();
   board.forEach((candidate, index) => {
