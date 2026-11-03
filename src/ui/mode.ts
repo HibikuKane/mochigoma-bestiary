@@ -1,9 +1,10 @@
-export type GameMode = "local" | "ai";
+/** "run" is the roguelike; "local" and "ai" play the classic baseline. */
+export type GameMode = "run" | "local" | "ai";
 
-export const GAME_MODES: ReadonlyArray<GameMode> = ["local", "ai"];
+export const GAME_MODES: ReadonlyArray<GameMode> = ["run", "local", "ai"];
 
 export function isGameMode(value: unknown): value is GameMode {
-  return value === "local" || value === "ai";
+  return value === "run" || value === "local" || value === "ai";
 }
 
 /**

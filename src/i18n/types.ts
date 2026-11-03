@@ -1,4 +1,5 @@
 import type { PieceKind, Player } from "../core/model";
+import type { StageTier } from "../run/stages";
 import type { GameMode } from "../ui/mode";
 
 export type Locale = "ko" | "ja" | "en";
@@ -11,6 +12,7 @@ export interface Messages {
   modeLabel: string;
   modes: Record<GameMode, string>;
   modeAi: string;
+  modeRun: string;
   aiThinking: string;
   aiHelp: string;
   depthLabel: string;
@@ -21,6 +23,7 @@ export interface Messages {
   cancel: string;
   helpTitle: string;
   help: readonly string[];
+  runHelp: readonly string[];
   selectHint: string;
   noTargets: string;
   dropHint: string;
@@ -43,4 +46,15 @@ export interface Messages {
   captured: (side: string, piece: string, target: string) => string;
   dropped: (side: string, piece: string) => string;
   promotion: string;
+  stage: (number: number, total: number, tier: string) => string;
+  tiers: Record<StageTier, string>;
+  roster: string;
+  rewardTitle: string;
+  rewardHint: string;
+  takeReward: (piece: string, movement: string) => string;
+  runVictory: (total: number) => string;
+  runDefeat: (stage: number) => string;
+  runDraw: (stage: number) => string;
+  newRun: string;
+  restartRunQuestion: string;
 }
