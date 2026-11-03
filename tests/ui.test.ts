@@ -267,7 +267,8 @@ describe("roguelike run in the UI", () => {
     const root = mountRun([quickWin, quickWin]);
     tap(root, 9);
     tap(root, 6);
-    expect(document.activeElement?.getAttribute("data-reward-index")).toBe("0");
+    expect(document.activeElement?.matches(".run-panel h3")).toBe(true);
+    expect(document.activeElement?.textContent).toContain("승리");
   });
 
   it("moves focus to the new-run button when the run is lost", () => {
@@ -275,7 +276,19 @@ describe("roguelike run in the UI", () => {
     tap(root, 10);
     tap(root, 6);
     vi.runAllTimers();
-    expect(document.activeElement?.hasAttribute("data-new-run")).toBe(true);
+    expect(document.activeElement?.matches(".run-panel--defeat h3")).toBe(true);
+  });
+
+  it("keeps an open restart prompt in place when the AI ends the battle", () => {
+    const root = mountRun([trap]);
+    tap(root, 10);
+    tap(root, 6);
+    click(root, "[data-reset]");
+    vi.runAllTimers();
+    expect(root.querySelector(".run-panel--defeat")).not.toBeNull();
+    expect(document.activeElement?.matches(".run-panel h3")).toBe(false);
+    click(root, "[data-cancel-reset]");
+    expect(document.activeElement?.matches(".run-panel--defeat h3")).toBe(true);
   });
 
   it("drops an AI reply that was still pending when a new run started", () => {

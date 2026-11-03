@@ -66,7 +66,7 @@ export const ja: Messages = {
   roster: "所持コマ",
   rewardTitle: "勝利！報酬を1つ選んでください。",
   rewardHint: "選んだコマは所持コマに加わり、次の戦闘から持ち駒として始まります。",
-  takeReward: (piece) => `${piece}を受け取る`,
+  takeReward: (piece, movement) => `${piece}を受け取る。${movement}`,
   runVictory: (total) => `ランクリア！${total}回の戦闘にすべて勝ちました。`,
   runDefeat: (stage) => `ラン終了 · 戦闘${stage}で負けました。`,
   runDraw: (stage) => `ラン終了 · 戦闘${stage}で同一局面が3回現れ、判定負けです。`,

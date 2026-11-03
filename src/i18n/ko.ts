@@ -66,7 +66,7 @@ export const ko: Messages = {
   roster: "보유 기물",
   rewardTitle: "승리! 보상을 하나 고르세요.",
   rewardHint: "고른 말은 보유 기물에 더해지고, 다음 전투부터 손패로 들고 시작합니다.",
-  takeReward: (piece) => `${piece} 받기`,
+  takeReward: (piece, movement) => `${piece} 받기. ${movement}`,
   runVictory: (total) => `런 클리어! 전투 ${total}개를 모두 이겼습니다.`,
   runDefeat: (stage) => `런 종료 · 전투 ${stage}에서 패배했습니다.`,
   runDraw: (stage) => `런 종료 · 전투 ${stage}에서 같은 국면이 세 번 반복되어 판정패입니다.`,

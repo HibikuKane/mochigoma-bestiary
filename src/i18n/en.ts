@@ -66,7 +66,7 @@ export const en: Messages = {
   roster: "Your roster",
   rewardTitle: "Victory! Choose one reward.",
   rewardHint: "The piece joins your roster and starts in your hand from the next battle on.",
-  takeReward: (piece) => `Take ${piece}`,
+  takeReward: (piece, movement) => `Take ${piece}. ${movement}`,
   runVictory: (total) => `Run cleared! You won all ${total} battles.`,
   runDefeat: (stage) => `Run over · Lost battle ${stage}.`,
   runDraw: (stage) => `Run over · Battle ${stage} repeated the same position three times, which counts as a loss.`,

@@ -73,6 +73,8 @@ select { min-height: 44px; padding: 8px 28px 8px 12px; border: 1px solid var(--l
 .run-status__roster li { font-size: 1.15rem; line-height: 1; }
 .run-panel { width: min(100%, 390px); display: grid; gap: 10px; padding: 14px; border: 1px solid var(--accent); border-radius: 10px; background: #243020; }
 .run-panel h3 { margin: 0; font-size: 1rem; line-height: 1.5; }
+.run-panel h3:focus { outline: none; }
+.run-panel h3:focus-visible { outline: 3px solid var(--accent); outline-offset: 3px; }
 .run-panel p { margin: 0; color: var(--muted); font-size: .8rem; line-height: 1.6; }
 .run-panel--defeat { border-color: #d0805f; }
 .run-panel__rewards { display: grid; gap: 8px; }

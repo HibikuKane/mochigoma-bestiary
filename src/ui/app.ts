@@ -128,6 +128,7 @@ export class LabApp {
     this.lastSearch = null;
     this.selection = null;
     this.confirmRestart = false;
+    this.focusRunPanel = false;
   }
 
   private startNewRun(): void {
@@ -402,18 +403,18 @@ export class LabApp {
     if (run.phase === "battle") return "";
     if (run.phase === "reward") {
       const options = run.rewardOptions.map((kind, index) => `<button class="reward" data-reward-index="${index}"
-        data-focus="reward-${index}" aria-label="${escape(`${m.takeReward(m.pieces[kind])}. ${m.movement[kind]}`)}" ${this.confirmRestart ? "disabled" : ""}>
+        data-focus="reward-${index}" aria-label="${escape(m.takeReward(m.pieces[kind], m.movement[kind]))}" ${this.confirmRestart ? "disabled" : ""}>
         <span class="reward__glyph" aria-hidden="true">${GLYPHS[kind]}</span>
         <span class="reward__text"><strong>${escape(m.pieces[kind])}</strong><span>${escape(m.movement[kind])}</span></span>
       </button>`).join("");
       return `<section class="run-panel" aria-label="${escape(m.rewardTitle)}">
-        <h3>${escape(m.rewardTitle)}</h3><p>${escape(m.rewardHint)}</p>
+        <h3 tabindex="-1" data-focus="run-panel-title">${escape(m.rewardTitle)}</h3><p>${escape(m.rewardHint)}</p>
         <div class="run-panel__rewards">${options}</div></section>`;
     }
     const message = run.phase === "victory" ? m.runVictory(run.stages.length)
       : run.defeat === "draw" ? m.runDraw(run.stageIndex + 1) : m.runDefeat(run.stageIndex + 1);
     return `<section class="run-panel run-panel--${run.phase}" aria-label="${escape(message)}">
-      <h3>${escape(message)}</h3>
+      <h3 tabindex="-1" data-focus="run-panel-title">${escape(message)}</h3>
       <button class="run-panel__new" data-new-run data-focus="new-run" ${this.confirmRestart ? "disabled" : ""}>${escape(m.newRun)}</button></section>`;
   }
 
@@ -474,10 +475,14 @@ export class LabApp {
       const next = Array.from(this.root.querySelectorAll<HTMLElement>("[data-focus]")).find((element) => element.dataset.focus === focused);
       (next ?? this.root.querySelector<HTMLElement>("[data-reset]"))?.focus({ preventScroll: true });
     }
-    if (this.focusRunPanel) {
+    // Wait while a restart prompt is open so the prompt stays in view; the
+    // panel gets its turn once the prompt is answered.
+    if (this.focusRunPanel && !this.confirmRestart) {
       this.focusRunPanel = false;
       const panel = this.root.querySelector<HTMLElement>(".run-panel");
-      panel?.querySelector<HTMLButtonElement>("button:not([disabled])")?.focus({ preventScroll: true });
+      // Focus the panel title, not a button: screen readers start from the
+      // result, and a held Enter key cannot pick a reward by accident.
+      panel?.querySelector<HTMLElement>("h3")?.focus({ preventScroll: true });
       panel?.scrollIntoView?.({ block: "center" });
     }
     // The screen now matches the state, so decide from that state alone whether

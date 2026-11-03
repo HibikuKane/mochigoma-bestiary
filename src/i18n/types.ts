@@ -51,7 +51,7 @@ export interface Messages {
   roster: string;
   rewardTitle: string;
   rewardHint: string;
-  takeReward: (piece: string) => string;
+  takeReward: (piece: string, movement: string) => string;
   runVictory: (total: number) => string;
   runDefeat: (stage: number) => string;
   runDraw: (stage: number) => string;
