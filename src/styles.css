@@ -24,6 +24,7 @@ h1 { margin: 0; font-size: clamp(1.5rem, 4.5vw, 2.3rem); line-height: 1.25; lett
 .topbar__controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; }
 .language-control, .mode-control, .depth-control { display: flex; align-items: center; gap: 10px; font-size: .8rem; }
 .language-control label, .mode-control label, .depth-control label { color: var(--muted); }
+.game__event-previous { margin: 6px 0 0; color: #8f9888; font-size: .74rem; line-height: 1.6; }
 .game__thinking { color: var(--muted); margin: 6px 0 0; font-size: .82rem; }
 select { min-height: 44px; padding: 8px 28px 8px 12px; border: 1px solid var(--line); background: #20291f; border-radius: 8px; }
 .play-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, .85fr); align-items: start; gap: 24px; }

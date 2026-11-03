@@ -297,6 +297,14 @@ function applyHpAction(state: GameState, action: GameAction, startHq: Hqs): Game
   let rng = state.rng ?? 1;
   const effects: { damage?: number; respawned?: boolean; tryDamage?: number } = {};
 
+  // A lion this side captured last turn has now sat out its owner's turn and
+  // stayed untouchable through this one, so its stun ends here. Ending it
+  // after the owner's own turn instead would let the captor take it again at
+  // once, which the stun exists to prevent (spec §4.3, H-5).
+  board.forEach((candidate, index) => {
+    if (candidate?.owner === rival && candidate.stunned) board[index] = withoutStun(candidate);
+  });
+
   if (captured) {
     // A capture deals the predator's ATK; a lion capture deals a fixed amount
     // (C-3, C-1). ATK is read before any promotion this move causes.
@@ -307,18 +315,14 @@ function applyHpAction(state: GameState, action: GameAction, startHq: Hqs): Game
 
   if (captured?.kind === "lion") {
     const square = respawnSquare(board, rival, rng);
-    // With no empty square at all the lion cannot come back; treat it as lost.
+    // A capture always empties the captor's origin square, so this cannot
+    // happen; kept as a guard: with no empty square the lion is lost.
     if (!square) return ended(moved, board, hq, rng, { type: "win", winner: player, reason: "capture" });
     const { combatAtk: _discarded, ...lion } = captured;
     board[square.index] = { ...lion, stunned: true };
     rng = square.rng;
     effects.respawned = true;
   }
-
-  // The acting side's stun has now lasted through its own turn.
-  board.forEach((candidate, index) => {
-    if (candidate?.owner === player && candidate.stunned) board[index] = withoutStun(candidate);
-  });
 
   // The rival's turn starts: its lion holding the far rank damages us (C-2).
   const rivalLion = lionSquare(board, rival);

@@ -23,7 +23,7 @@ export interface Piece {
   readonly fusionAtk?: number;
   /** ATK gained for the current battle only; cleared when the piece is captured. */
   readonly combatAtk?: number;
-  /** A respawned lion: cannot move and cannot be captured until its owner's turn ends. */
+  /** A respawned lion: cannot move on its owner's next turn and cannot be captured until the captor's next turn ends. */
   readonly stunned?: boolean;
 }
 

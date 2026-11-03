@@ -1,6 +1,6 @@
 import {
   fromIndex, samePosition, toIndex,
-  type GameAction, type GameState, type Piece, type PieceKind,
+  type GameAction, type GameEvent, type GameState, type Piece, type PieceKind,
   type Player, type Position, type Selection,
 } from "../core/model";
 import type { Ruleset } from "../core/ruleset";
@@ -57,6 +57,12 @@ export class LabApp {
   private mode: GameMode = "run";
   /** Set when a battle has just ended, so the next render brings the run panel into view. */
   private focusRunPanel = false;
+  /**
+   * The run battle's last two events, oldest first. The AI answers within a
+   * moment, so showing only the latest event would hide what the player's own
+   * move caused, such as damage from an enemy lion holding the far rank.
+   */
+  private recentEvents: GameEvent[] = [];
   /** Provisional development control; see SEARCH_DEPTHS. */
   private searchDepth = standardClassicProfile.searchDepth;
   private thinking = false;
@@ -113,6 +119,7 @@ export class LabApp {
   private commit(next: GameState): void {
     this.state = next;
     if (this.mode !== "run") return;
+    this.recentEvents = [...this.recentEvents, next.lastEvent].slice(-2);
     const before = this.run.phase;
     this.run = finishBattle(this.run, next.result);
     // The reward or result panel sits below the board, often off screen on a
@@ -134,6 +141,7 @@ export class LabApp {
     this.selection = null;
     this.confirmRestart = false;
     this.focusRunPanel = false;
+    this.recentEvents = [];
   }
 
   private startNewRun(): void {
@@ -254,7 +262,7 @@ export class LabApp {
         material: result.breakdown.material, mobility: result.breakdown.mobility,
         boardControl: result.breakdown.boardControl, lionSafety: result.breakdown.lionSafety,
         tryProgress: result.breakdown.tryProgress, lionCapture: result.breakdown.lionCapture,
-        total: result.breakdown.total,
+        lionThreat: result.breakdown.lionThreat, hqHp: result.breakdown.hqHp, total: result.breakdown.total,
       },
     });
   }
@@ -472,6 +480,8 @@ export class LabApp {
         <section class="game" aria-label="${escape(m.title)}">
           <div class="game__status"><div role="status" aria-live="polite" aria-atomic="true">
             <h2 class="game__turn">${escape(this.resultText())}</h2>
+            ${this.mode === "run" && this.recentEvents.length === 2
+              ? `<p class="game__event-previous">${escape(formatEvent(this.recentEvents[0], m))}</p>` : ""}
             <p class="game__event">${escape(formatEvent(this.state.lastEvent, m))}</p>
             ${this.thinking ? `<p class="game__thinking">${escape(m.aiThinking)}</p>` : ""}
           </div><button class="reset-button" data-reset data-focus="reset">${escape(restartLabel)}</button></div>

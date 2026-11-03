@@ -318,17 +318,28 @@ describe("roguelike run in the UI", () => {
     expect(root.querySelector(".game__event")?.textContent).toContain("북쪽 본진 2 피해");
   });
 
-  it("marks a lion that came back from capture as stunned", () => {
+  it("marks a lion that came back from capture as stunned until the player's next move", () => {
     const sturdy: StageDefinition = {
       id: "test-stun", tier: "normal", aiDepth: 1, enemyHp: 15, enemyHand: [],
-      enemyBoard: [{ row: 2, column: 0, kind: "lion" }],
+      enemyBoard: [{ row: 2, column: 0, kind: "lion" }, { row: 0, column: 0, kind: "chick" }],
     };
     const root = mountRun([sturdy]);
     tap(root, 9);
     tap(root, 6);
+    // The AI can only move its chick; on the player's turn the lion is still stunned.
+    vi.runAllTimers();
+    expect(turnText(root)).toContain("남쪽");
     const returned = root.querySelector<HTMLButtonElement>('[data-cell="1"]');
     expect(returned?.getAttribute("aria-label")).toContain("(기절)");
     expect(returned?.querySelector(".piece__status")?.textContent).toBe("기절");
+  });
+
+  it("keeps the player's last move on screen after the AI answers", () => {
+    const root = mountRun();
+    playSouthMove(root);
+    vi.runAllTimers();
+    expect(root.querySelector(".game__event-previous")?.textContent).toContain("남쪽:");
+    expect(root.querySelector(".game__event")?.textContent).toContain("북쪽:");
   });
 
   it("hides HQs in the classic modes", () => {

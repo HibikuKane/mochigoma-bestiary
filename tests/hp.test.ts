@@ -112,23 +112,23 @@ describe("lion capture", () => {
     expect(state.lastEvent).toMatchObject({ captured: "lion", damage: LION_CAPTURE_DAMAGE, respawned: true });
   });
 
-  it("keeps a stunned lion still and untouchable for its owner's next turn only", () => {
-    let state = play(lionBattle(), move(2, 1, 1, 1));
+  it("keeps the returned lion still on its owner's turn and untouchable through the captor's next turn", () => {
     const ruleset = createRoguelikeRuleset(lionBattle());
-    // North's turn: the stunned lion has no moves; only the chick can move.
-    expect(ruleset.legalActions(state).every((action) => action.type !== "move" || action.from.row !== 0 || action.from.column !== 1))
-      .toBe(true);
+    // South takes the lion; it returns stunned to (0,1).
+    let state = ruleset.applyAction(ruleset.createInitialState(), move(2, 1, 1, 1));
+    // North's turn: the lion cannot move, so North moves the chick.
+    expect(ruleset.legalActions(state).some((action) =>
+      action.type === "move" && action.from.row === 0 && action.from.column === 1)).toBe(false);
     state = ruleset.applyAction(state, move(0, 2, 1, 2));
-    expect(at(state, 0, 1)).toMatchObject({ kind: "lion" });
+    // South's turn, right after: the giraffe next to the lion may not take it again.
+    expect(at(state, 0, 1)).toMatchObject({ kind: "lion", stunned: true });
+    expect(ruleset.legalActions(state).map(key)).not.toContain(key(move(1, 1, 0, 1)));
+    state = ruleset.applyAction(state, move(3, 1, 3, 0));
+    // North's next turn: the stun is over and the lion moves again.
     expect(at(state, 0, 1)).not.toHaveProperty("stunned");
-  });
-
-  it("does not let the stunned lion be captured", () => {
-    // South giraffe on (1,1) is next to the returned lion on (0,1) but may not take it.
-    const state = play(lionBattle(), move(2, 1, 1, 1));
-    const southView = { ...state, turn: "south" as const };
-    const ruleset = createRoguelikeRuleset(lionBattle());
-    expect(ruleset.legalActions(southView).map(key)).not.toContain(key(move(1, 1, 0, 1)));
+    expect(ruleset.legalActions(state).some((action) =>
+      action.type === "move" && action.from.row === 0 && action.from.column === 1)).toBe(true);
+    expect(state.hq?.north.hp).toBe(15 - LION_CAPTURE_DAMAGE);
   });
 
   it("falls back to the left, then right back-rank square", () => {

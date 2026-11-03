@@ -29,7 +29,7 @@ export const en: Messages = {
     "You play South. Select your piece, then a highlighted square. Captured pieces join your hand and can be placed on an empty square. A Chick becomes a Hen when it moves onto the far rank.",
     "Both sides have an HQ with HP. Bring the enemy HQ to 0 HP to win the battle. Your HQ is back to full HP at the start of every battle.",
     "Capturing an enemy piece deals your capturing piece's ATK to the enemy HQ. ATK: Chick 1, Hen, Giraffe and Elephant 2, Lion 3.",
-    "Capturing a Lion deals 10 damage. The captured Lion returns to its own back rank and cannot move for one turn; it cannot be captured during that turn.",
+    "Capturing a Lion deals 10 damage. The captured Lion returns to its own back rank and cannot move on its next turn. In return, it cannot be captured again until the enemy's next turn is over.",
     "If your Lion enters the far rank and survives the enemy's turn, it deals 5 damage to the enemy HQ at the start of each of your turns while it stays there.",
     "In a run you may make moves that leave your Lion under attack. The same position appearing three times counts as a loss.",
     "After each won battle, pick one piece to add to your roster. It starts in your hand from the next battle on.",
