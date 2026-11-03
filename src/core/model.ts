@@ -6,10 +6,23 @@ export type PieceKind = "lion" | "giraffe" | "elephant" | "chick" | "hen";
 
 export const PIECE_KINDS: ReadonlyArray<PieceKind> = ["lion", "giraffe", "elephant", "chick", "hen"];
 
+/** A one-square step as seen by south: row -1 is forward, column +1 is right. */
+export type StepVector = readonly [row: number, column: number];
+
 export interface Piece {
   readonly id: string;
   readonly kind: PieceKind;
   readonly owner: Player;
+  /**
+   * The fields below are used by the roguelike ruleset only; the classic
+   * ruleset ignores them. A missing field means "none" / 0.
+   */
+  /** Extra steps gained permanently (e.g. from fusion), as seen by south. */
+  readonly extraSteps?: ReadonlyArray<StepVector>;
+  /** ATK gained permanently for the run (e.g. from fusion). */
+  readonly fusionAtk?: number;
+  /** ATK gained for the current battle only; cleared when the piece is captured. */
+  readonly combatAtk?: number;
 }
 
 export interface Position {

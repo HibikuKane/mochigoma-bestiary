@@ -31,6 +31,12 @@ export interface EvaluationWeights {
   readonly lionSafety: number;
   /** Per rank of lion try-progress advantage. */
   readonly tryProgress: number;
+  /**
+   * Side to move can take the other lion. Must dwarf every other term but stay
+   * well below the search's terminal scores, so a real win found by the search
+   * still ranks higher. Never non-zero in the classic ruleset.
+   */
+  readonly lionCapture: number;
 }
 
 /**
@@ -64,5 +70,6 @@ export const standardClassicProfile: EvaluationProfile = {
     boardControl: 8,
     lionSafety: 12,
     tryProgress: 15,
+    lionCapture: 100_000,
   },
 };
