@@ -15,7 +15,7 @@ import {
   type Position,
 } from "../core/model";
 import type { PositionAnalysis, Ruleset } from "../core/ruleset";
-import { boardSteps, capturedForm, pieceSignature } from "./pieceData";
+import { boardSteps, capturedForm, isOneSquareStep, pieceSignature } from "./pieceData";
 
 /**
  * Roguelike ruleset, phase P1 (docs/roadmap.md): the skeleton the run and the
@@ -116,12 +116,18 @@ function validateSetup(setup: BattleSetup): void {
   for (const player of ["north", "south"] as const) {
     const lions = setup.board.filter((candidate) => candidate?.owner === player && candidate.kind === "lion");
     if (lions.length !== 1) throw new Error(`${player} needs exactly one lion on the board.`);
-    if (setup.hands[player].some((candidate) => candidate.kind === "lion" || candidate.owner !== player)) {
-      throw new Error(`${player}'s hand may only hold its own non-lion pieces.`);
+    // A hand only ever holds demoted, non-lion pieces of its owner (spec §4.2).
+    if (setup.hands[player].some((candidate) =>
+      candidate.kind === "lion" || candidate.kind === "hen" || candidate.owner !== player)) {
+      throw new Error(`${player}'s hand may only hold its own unpromoted non-lion pieces.`);
     }
   }
-  const ids = [...setup.board.filter((candidate): candidate is Piece => candidate !== null),
-    ...setup.hands.north, ...setup.hands.south].map((candidate) => candidate.id);
+  const pieces = [...setup.board.filter((candidate): candidate is Piece => candidate !== null),
+    ...setup.hands.north, ...setup.hands.south];
+  if (pieces.some((candidate) => candidate.extraSteps?.some((step) => !isOneSquareStep(step)))) {
+    throw new Error("Extra steps must be one-square steps.");
+  }
+  const ids = pieces.map((candidate) => candidate.id);
   if (new Set(ids).size !== ids.length) throw new Error("Piece ids must be unique within a battle.");
 }
 
@@ -211,7 +217,14 @@ function applyAction(state: GameState, action: GameAction): GameState {
 }
 
 /** One ruleset per battle, because each battle starts from its own setup. */
-export function createRoguelikeRuleset(setup: BattleSetup): Ruleset {
+export function createRoguelikeRuleset(input: BattleSetup): Ruleset {
+  // Copy before validating so later changes to the caller's arrays cannot
+  // produce an initial state that skipped validation.
+  const setup: BattleSetup = {
+    board: [...input.board],
+    hands: { north: [...input.hands.north], south: [...input.hands.south] },
+    firstPlayer: input.firstPlayer,
+  };
   validateSetup(setup);
   return {
     id: "roguelike",

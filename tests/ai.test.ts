@@ -5,6 +5,7 @@ import {
   createAiOpponent, createEvaluator, createSearchEngine, createStandardOpponent,
   standardClassicProfile, WIN_SCORE, type EvaluationProfile,
 } from "../src/ai";
+import { createRandom } from "../src/ai/random";
 
 type Placement = readonly [row: number, column: number, kind: PieceKind, owner: Player];
 
@@ -184,10 +185,23 @@ describe("evaluation", () => {
       .not.toBe(evaluator.evaluate(state, "south"));
   });
 
+  it("never scores a capturable lion in classic, where moves cannot leave the lion attacked", () => {
+    const random = createRandom(11);
+    for (let game = 0; game < 3; game += 1) {
+      let state = classicRuleset.createInitialState();
+      for (let ply = 0; ply < 60 && state.result.type === "playing"; ply += 1) {
+        expect(evaluator.extractFeatures(state, "south").lionCapture).toBe(0);
+        expect(evaluator.extractFeatures(state, "north").lionCapture).toBe(0);
+        const actions = classicRuleset.legalActions(state);
+        state = classicRuleset.applyAction(state, actions[Math.floor(random() * actions.length)]);
+      }
+    }
+  });
+
   it("reports a breakdown whose terms add up to the total", () => {
     const breakdown = evaluator.explain(classicRuleset.createInitialState(), "south");
     expect(breakdown.material + breakdown.mobility + breakdown.boardControl
-      + breakdown.lionSafety + breakdown.tryProgress).toBe(breakdown.total);
+      + breakdown.lionSafety + breakdown.tryProgress + breakdown.lionCapture).toBe(breakdown.total);
   });
 });
 
@@ -197,7 +211,7 @@ describe("profile swapping", () => {
     weights: {
       material: { lion: 0, giraffe: 380, elephant: 350, chick: 100, hen: 450 },
       materialInHand: { lion: 0, giraffe: 420, elephant: 385, chick: 110, hen: 495 },
-      mobility: 0, boardControl: 0, lionSafety: 0, tryProgress: 0,
+      mobility: 0, boardControl: 0, lionSafety: 0, tryProgress: 0, lionCapture: 0,
     },
   };
   const tryRush: EvaluationProfile = {

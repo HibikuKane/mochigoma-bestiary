@@ -149,12 +149,57 @@ describe("roguelike ruleset", () => {
     expect(state.result.type).toBe("playing");
   });
 
-  it("rejects setups without exactly one lion per side or with duplicate ids", () => {
+  it("rejects invalid setups", () => {
     const southLion = make("lion", "south");
-    expect(() => createRoguelikeRuleset(setupWith([[3, 1, southLion]]))).toThrow();
+    const northLion = make("lion", "north");
+    expect(() => createRoguelikeRuleset({ board: Array(11).fill(null), hands: { north: [], south: [] } }))
+      .toThrow(/squares/);
+    expect(() => createRoguelikeRuleset(setupWith([[3, 1, southLion]]))).toThrow(/north needs exactly one lion/);
+    expect(() => createRoguelikeRuleset(setupWith([[3, 1, southLion], [0, 1, { ...southLion, owner: "north" }]])))
+      .toThrow(/unique/);
+    expect(() => createRoguelikeRuleset(setupWith([[3, 1, southLion], [0, 1, northLion]], { south: [make("hen", "south")] })))
+      .toThrow(/hand/);
+    expect(() => createRoguelikeRuleset(setupWith([[3, 1, southLion], [0, 1, northLion]], { south: [make("chick", "north")] })))
+      .toThrow(/hand/);
     expect(() => createRoguelikeRuleset(setupWith([
-      [3, 1, southLion], [0, 1, { ...southLion, owner: "north" }],
-    ]))).toThrow();
+      [3, 1, southLion], [0, 1, northLion], [2, 0, make("chick", "south", { extraSteps: [[5, 5]] })],
+    ]))).toThrow(/one-square/);
+  });
+
+  it("is not affected by changes to the caller's setup after creation", () => {
+    const setup = setupWith([[3, 1, make("lion", "south")], [0, 1, make("lion", "north")]]);
+    const ruleset = createRoguelikeRuleset(setup);
+    (setup.board as Array<Piece | null>)[toIndex({ row: 0, column: 1 })] = null;
+    expect(ruleset.createInitialState().board[toIndex({ row: 0, column: 1 })]).toMatchObject({ kind: "lion" });
+  });
+
+  it("moves a north piece along its mirrored extra steps", () => {
+    // A north chick with an extra "back" step (south's view [1,0]) can move toward row 0.
+    const setup = setupWith([
+      [3, 1, make("lion", "south")], [0, 0, make("lion", "north")],
+      [2, 2, make("chick", "north", { extraSteps: [[1, 0]] })],
+    ], {}, "north");
+    const ruleset = createRoguelikeRuleset(setup);
+    const moves = ruleset.legalActions(ruleset.createInitialState()).map(key);
+    expect(moves).toContain(key(move(2, 2, 3, 2)));
+    expect(moves).toContain(key(move(2, 2, 1, 2)));
+  });
+
+  it("lets the captor drop a captured fused piece and use its extra steps", () => {
+    const winged = make("chick", "north", { extraSteps: [[0, 1]] });
+    const setup = setupWith([
+      [3, 1, make("lion", "south")], [0, 2, make("lion", "north")],
+      [2, 0, make("giraffe", "south")], [1, 0, winged],
+    ]);
+    const ruleset = createRoguelikeRuleset(setup);
+    const quietNorthMove = (current: GameState) => ruleset.legalActions(current).find((action) =>
+      action.type === "move" && !current.board[toIndex(action.to)])!;
+    let state = ruleset.applyAction(ruleset.createInitialState(), move(2, 0, 1, 0));
+    state = ruleset.applyAction(state, quietNorthMove(state));
+    state = ruleset.applyAction(state, { type: "drop", player: "south", handIndex: 0, to: { row: 2, column: 0 } });
+    expect(state.board[toIndex({ row: 2, column: 0 })]).toMatchObject({ id: winged.id, owner: "south" });
+    state = ruleset.applyAction(state, quietNorthMove(state));
+    expect(ruleset.legalActions(state).map(key)).toContain(key(move(2, 0, 2, 1)));
   });
 
   it("moves a piece along its extra steps", () => {
@@ -210,6 +255,11 @@ describe("roguelike ruleset", () => {
     const plainState = createRoguelikeRuleset(plain).createInitialState();
     const fusedState = createRoguelikeRuleset(fused).createInitialState();
     expect(roguelikePositionKey(plainState)).not.toBe(roguelikePositionKey(fusedState));
+    const buffed = setupWith([
+      [3, 1, make("lion", "south")], [0, 1, make("lion", "north")], [2, 0, make("chick", "south", { combatAtk: 1 })],
+    ]);
+    expect(roguelikePositionKey(createRoguelikeRuleset(buffed).createInitialState()))
+      .not.toBe(roguelikePositionKey(plainState));
   });
 
   it("rejects illegal actions and never mutates its input", () => {
@@ -254,6 +304,46 @@ describe("AI on the roguelike ruleset", () => {
     ]);
     const end = playOut(setup, 2, 1);
     expect(end.result.type).not.toBe("playing");
+  });
+
+  function hangsLion(after: GameState, mover: Player): boolean {
+    if (after.result.type !== "playing") return false;
+    const lion = roguelikeAnalysis.lionSquare(after.board, mover);
+    const rival = mover === "south" ? "north" : "south";
+    return lion !== null && roguelikeAnalysis.attackedSquares(after.board, rival).has(lion);
+  }
+
+  it("does not trade its lion for material at depth 1", () => {
+    // Taking the chick on (2,1) wins material but leaves the lion where the elephant takes it.
+    const setup = setupWith([
+      [3, 1, make("lion", "south")], [0, 2, make("lion", "north")],
+      [2, 1, make("chick", "north")], [1, 0, make("elephant", "north")],
+    ]);
+    const ruleset = createRoguelikeRuleset(setup);
+    const ai = createAiOpponent(ruleset, { profile: { ...standardClassicProfile, searchDepth: 1 }, perspective: "south", seed: 1 });
+    const { action } = ai.chooseMove(ruleset.createInitialState());
+    expect(key(action!)).not.toBe(key(move(3, 1, 2, 1)));
+  });
+
+  it("never hangs its own lion at depth 1 while a safe move exists", () => {
+    const ruleset = createRoguelikeRuleset(originalSetup());
+    let longest = 0;
+    for (const seed of [1, 2, 3, 4, 5]) {
+      let state = ruleset.createInitialState();
+      let ply = 0;
+      for (; ply < 40 && state.result.type === "playing"; ply += 1) {
+        const mover = state.turn;
+        const ai = createAiOpponent(ruleset, { profile: { ...standardClassicProfile, searchDepth: 1 }, perspective: mover, seed });
+        const next = ruleset.applyAction(state, ai.chooseMove(state).action!);
+        if (hangsLion(next, mover)) {
+          const safe = ruleset.legalActions(state).some((action) => !hangsLion(ruleset.applyAction(state, action), mover));
+          expect(safe).toBe(false);
+        }
+        state = next;
+      }
+      longest = Math.max(longest, ply);
+    }
+    expect(longest).toBeGreaterThan(4);
   });
 
   it("takes a lion left hanging by a self-endangering move", () => {

@@ -33,6 +33,16 @@ export interface EvaluationFeatures {
   readonly lionSafety: number;
   /** Try-progress advantage, in ranks. */
   readonly tryProgress: number;
+  /**
+   * +1 when the perspective is to move and can capture the rival lion, -1 when
+   * the rival is to move and can capture mine, otherwise 0.
+   *
+   * The classic ruleset never lets a move leave the mover's lion attacked, so
+   * this is always 0 there. Rulesets that allow such moves (roguelike) need it:
+   * without it, a move at the search horizon that hangs the lion looks no
+   * worse than any other.
+   */
+  readonly lionCapture: number;
 }
 
 /** Per-term contributions, for debugging and for balancing profiles later. */
@@ -42,6 +52,7 @@ export interface EvaluationBreakdown {
   readonly boardControl: number;
   readonly lionSafety: number;
   readonly tryProgress: number;
+  readonly lionCapture: number;
   readonly total: number;
   readonly features: EvaluationFeatures;
 }
@@ -112,7 +123,7 @@ export function createEvaluator(ruleset: Ruleset, profile: EvaluationProfile): E
     const mobility = actionCount(ruleset, state, perspective) - actionCount(ruleset, state, rival);
 
     if (!analysis) {
-      return { boardPieces, handPieces, mobility, boardControl: 0, lionSafety: 0, tryProgress: 0 };
+      return { boardPieces, handPieces, mobility, boardControl: 0, lionSafety: 0, tryProgress: 0, lionCapture: 0 };
     }
 
     const mineAttacks = analysis.attackedSquares(state.board, perspective);
@@ -130,7 +141,12 @@ export function createEvaluator(ruleset: Ruleset, profile: EvaluationProfile): E
     const tryProgress =
       myDistance === null || rivalDistance === null ? 0 : rivalDistance - myDistance;
 
-    return { boardPieces, handPieces, mobility, boardControl, lionSafety, tryProgress };
+    const lionCapture =
+      state.turn === perspective
+        ? (rivalLion !== null && mineAttacks.has(rivalLion) ? 1 : 0)
+        : (myLion !== null && rivalAttacks.has(myLion) ? -1 : 0);
+
+    return { boardPieces, handPieces, mobility, boardControl, lionSafety, tryProgress, lionCapture };
   }
 
   function explain(state: GameState, perspective: Player): EvaluationBreakdown {
@@ -146,9 +162,10 @@ export function createEvaluator(ruleset: Ruleset, profile: EvaluationProfile): E
     const boardControl = features.boardControl * weights.boardControl;
     const lionSafety = features.lionSafety * weights.lionSafety;
     const tryProgress = features.tryProgress * weights.tryProgress;
+    const lionCapture = features.lionCapture * weights.lionCapture;
     return {
-      material, mobility, boardControl, lionSafety, tryProgress,
-      total: material + mobility + boardControl + lionSafety + tryProgress,
+      material, mobility, boardControl, lionSafety, tryProgress, lionCapture,
+      total: material + mobility + boardControl + lionSafety + tryProgress + lionCapture,
       features,
     };
   }
