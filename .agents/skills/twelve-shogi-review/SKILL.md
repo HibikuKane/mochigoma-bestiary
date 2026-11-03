@@ -5,7 +5,7 @@ description: Independently review a mochigoma-bestiary PR for whether its actual
 
 # Twelve Shogi: independent review
 
-Read `AGENTS.md` and [CONTRIBUTING.md](../../../CONTRIBUTING.md). Read [goals](../../../docs/project-goals.md) and [roadmap](../../../docs/roadmap.md) when deciding purpose-fit. You must be a separate reviewer from the implementer; a single agent changing roles is self-review, not independence.
+Read `AGENTS.md` and [CONTRIBUTING.md](../../../CONTRIBUTING.md). Read [goals](../../../docs/project-goals.md), [roadmap](../../../docs/roadmap.md), and [roguelike spec](../../../docs/roguelike-spec.md) when deciding purpose-fit. You must be a separate reviewer from the implementer; a single agent changing roles is self-review, not independence.
 
 ## Establish the review target
 

@@ -27,6 +27,7 @@
 | 문서 | 담는 내용 |
 |---|---|
 | [프로젝트 목표](docs/project-goals.md) | 게임 정체성, 3계층 구조, 채택한 방향, 미정 기획, 개발 제약 |
+| [로그라이크 규칙 사양](docs/roguelike-spec.md) | 전투·런·융합·이벤트 규칙과 합의/임시/미정 상태 |
 | [개발 로드맵](docs/roadmap.md) | 작업 순서와 각 단계의 수용 조건 |
 | [실험 헌장](docs/experiment-charter.md) | 규칙·밸런스 실험의 질문, 비교, 폐기 기록 방식 |
 | [다음 세션 인계](docs/handoff.md) | 확인된 커밋, 제안 중인 변경, 검증 한계, 다음 작업 |
@@ -73,7 +74,7 @@ src/experiments/   ruleset 목록과 메타데이터
 src/i18n/          한·일·영 사전, 언어 선택, 대국 메시지 번역
 src/ui/            브라우저 인터페이스
 tests/             규칙·AI·UI 회귀 테스트
-docs/              목표, 로드맵, 실험 기록, 인계
+docs/              목표, 규칙 사양, 로드맵, 실험 기록, 인계
 .agents/skills/    이 저장소의 변경·독립 리뷰 절차 (.claude/skills/는 이 폴더의 심볼릭 링크)
 .github/           PR 템플릿, PR 검증, main 배포
 ```
