@@ -3,7 +3,7 @@ import {
   type GameResult, type Piece, type PieceKind, type StepVector,
 } from "../core/model";
 import type { BattleSetup } from "../rules/roguelike";
-import { REWARD_KINDS, STAGES, type StageDefinition } from "./stages";
+import { PLAYER_HP, REWARD_KINDS, STAGES, type StageDefinition } from "./stages";
 
 /**
  * Run state: everything that outlives a single battle (spec §5).
@@ -36,6 +36,8 @@ export interface RunState {
   readonly defeat: "loss" | "draw" | null;
   /** Next number for a deterministic roster id. */
   readonly nextPieceNumber: number;
+  /** Player HQ HP at the start of each battle. */
+  readonly playerMaxHp: number;
 }
 
 /** Original starting set and squares for the player (spec §5, provisional). */
@@ -46,12 +48,16 @@ const PLAYER_SLOTS: ReadonlyArray<{ row: number; column: number; kind: PieceKind
   { row: 2, column: 1, kind: "chick" },
 ];
 
-export function startRun(seed: number, stages: ReadonlyArray<StageDefinition> = STAGES): RunState {
+export function startRun(
+  seed: number,
+  stages: ReadonlyArray<StageDefinition> = STAGES,
+  playerMaxHp: number = PLAYER_HP,
+): RunState {
   if (stages.length === 0) throw new Error("A run needs at least one stage.");
   const roster = PLAYER_SLOTS.map((slot, index) => ({ id: `r${index + 1}`, kind: slot.kind }));
   return {
     seed, stages, stageIndex: 0, phase: "battle", roster,
-    rewardOptions: [], rewardHistory: [], defeat: null, nextPieceNumber: roster.length + 1,
+    rewardOptions: [], rewardHistory: [], defeat: null, nextPieceNumber: roster.length + 1, playerMaxHp,
   };
 }
 
@@ -86,7 +92,17 @@ export function battleSetup(run: RunState): BattleSetup {
     id: `e${run.stageIndex + 1}-h${index + 1}`, kind, owner: "north",
   }));
 
-  return { board, hands: { north: northHand, south: southHand }, firstPlayer: "south" };
+  return {
+    board,
+    hands: { north: northHand, south: southHand },
+    firstPlayer: "south",
+    // Every battle starts both HQs at full HP (spec §4.3, provisional).
+    hq: {
+      north: { hp: stage.enemyHp, maxHp: stage.enemyHp },
+      south: { hp: run.playerMaxHp, maxHp: run.playerMaxHp },
+    },
+    seed: (run.seed + run.stageIndex * 7919) >>> 0,
+  };
 }
 
 /**

@@ -41,8 +41,16 @@ export interface EvaluationFeatures {
    * this is always 0 there. Rulesets that allow such moves (roguelike) need it:
    * without it, a move at the search horizon that hangs the lion looks no
    * worse than any other.
+   *
+   * Only counted when the capture would decide the battle: always without
+   * HQs, and with HQs only when the victim's HP cannot survive the lion
+   * capture damage. Otherwise the same situation is a `lionThreat`.
    */
   readonly lionCapture: number;
+  /** Same sign rules as `lionCapture`, for a lion capture the victim's HQ survives. */
+  readonly lionThreat: number;
+  /** My HQ HP minus the rival's, or 0 when the battle has no HQs. */
+  readonly hqHp: number;
 }
 
 /** Per-term contributions, for debugging and for balancing profiles later. */
@@ -53,6 +61,8 @@ export interface EvaluationBreakdown {
   readonly lionSafety: number;
   readonly tryProgress: number;
   readonly lionCapture: number;
+  readonly lionThreat: number;
+  readonly hqHp: number;
   readonly total: number;
   readonly features: EvaluationFeatures;
 }
@@ -121,9 +131,13 @@ export function createEvaluator(ruleset: Ruleset, profile: EvaluationProfile): E
     state.hands[rival].forEach((candidate) => { handPieces[candidate.kind] -= 1; });
 
     const mobility = actionCount(ruleset, state, perspective) - actionCount(ruleset, state, rival);
+    const hqHp = state.hq ? state.hq[perspective].hp - state.hq[rival].hp : 0;
 
     if (!analysis) {
-      return { boardPieces, handPieces, mobility, boardControl: 0, lionSafety: 0, tryProgress: 0, lionCapture: 0 };
+      return {
+        boardPieces, handPieces, mobility, boardControl: 0, lionSafety: 0, tryProgress: 0,
+        lionCapture: 0, lionThreat: 0, hqHp,
+      };
     }
 
     const mineAttacks = analysis.attackedSquares(state.board, perspective);
@@ -141,12 +155,22 @@ export function createEvaluator(ruleset: Ruleset, profile: EvaluationProfile): E
     const tryProgress =
       myDistance === null || rivalDistance === null ? 0 : rivalDistance - myDistance;
 
-    const lionCapture =
-      state.turn === perspective
-        ? (rivalLion !== null && mineAttacks.has(rivalLion) ? 1 : 0)
-        : (myLion !== null && rivalAttacks.has(myLion) ? -1 : 0);
+    // Only the side to move can take a lion now; a stunned lion cannot be taken.
+    const takeable = (lion: number | null, attackers: ReadonlySet<number>) =>
+      lion !== null && attackers.has(lion) && !state.board[lion]?.stunned;
+    const decisive = (victim: Player) =>
+      !state.hq || analysis.lionCaptureDamage === undefined || state.hq[victim].hp <= analysis.lionCaptureDamage;
+    let lionCapture = 0;
+    let lionThreat = 0;
+    if (state.turn === perspective && takeable(rivalLion, mineAttacks)) {
+      if (decisive(rival)) lionCapture = 1; else lionThreat = 1;
+    } else if (state.turn === rival && takeable(myLion, rivalAttacks)) {
+      if (decisive(perspective)) lionCapture = -1; else lionThreat = -1;
+    }
 
-    return { boardPieces, handPieces, mobility, boardControl, lionSafety, tryProgress, lionCapture };
+    return {
+      boardPieces, handPieces, mobility, boardControl, lionSafety, tryProgress, lionCapture, lionThreat, hqHp,
+    };
   }
 
   function explain(state: GameState, perspective: Player): EvaluationBreakdown {
@@ -163,9 +187,11 @@ export function createEvaluator(ruleset: Ruleset, profile: EvaluationProfile): E
     const lionSafety = features.lionSafety * weights.lionSafety;
     const tryProgress = features.tryProgress * weights.tryProgress;
     const lionCapture = features.lionCapture * weights.lionCapture;
+    const lionThreat = features.lionThreat * weights.lionThreat;
+    const hqHp = features.hqHp * weights.hqHp;
     return {
-      material, mobility, boardControl, lionSafety, tryProgress, lionCapture,
-      total: material + mobility + boardControl + lionSafety + tryProgress + lionCapture,
+      material, mobility, boardControl, lionSafety, tryProgress, lionCapture, lionThreat, hqHp,
+      total: material + mobility + boardControl + lionSafety + tryProgress + lionCapture + lionThreat + hqHp,
       features,
     };
   }

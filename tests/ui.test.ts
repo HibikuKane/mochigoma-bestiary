@@ -165,18 +165,19 @@ describe("roguelike run in the UI", () => {
   /** South's giraffe on (3,0) can take this lion on its first move. */
   const quickWin: StageDefinition = {
     id: "test-win", tier: "normal", enemyBoard: [{ row: 2, column: 0, kind: "lion" }], enemyHand: [], aiDepth: 1,
+    enemyHp: 10,
   };
   /** The north giraffe on (1,0) covers (2,0), where south's lion can step. */
   const trap: StageDefinition = {
     id: "test-trap", tier: "boss",
     enemyBoard: [{ row: 0, column: 1, kind: "lion" }, { row: 1, column: 0, kind: "giraffe" }],
-    enemyHand: [], aiDepth: 1,
+    enemyHand: [], aiDepth: 1, enemyHp: 10,
   };
 
-  function mountRun(stages?: ReadonlyArray<StageDefinition>): HTMLElement {
+  function mountRun(stages?: ReadonlyArray<StageDefinition>, playerHp?: number): HTMLElement {
     const root = document.createElement("div");
     document.body.append(root);
-    new LabApp(root, stages ? { stages } : {});
+    new LabApp(root, { ...(stages ? { stages } : {}), ...(playerHp ? { playerHp } : {}) });
     choose(root, "language", "ko");
     return root;
   }
@@ -222,7 +223,8 @@ describe("roguelike run in the UI", () => {
   });
 
   it("ends the run when the AI takes a lion left in danger", () => {
-    const root = mountRun([trap]);
+    // With 10 HP the lion capture's 10 damage ends the battle.
+    const root = mountRun([trap], 10);
     tap(root, 10);
     tap(root, 6);
     vi.runAllTimers();
@@ -272,7 +274,7 @@ describe("roguelike run in the UI", () => {
   });
 
   it("moves focus to the new-run button when the run is lost", () => {
-    const root = mountRun([trap]);
+    const root = mountRun([trap], 10);
     tap(root, 10);
     tap(root, 6);
     vi.runAllTimers();
@@ -280,7 +282,7 @@ describe("roguelike run in the UI", () => {
   });
 
   it("keeps an open restart prompt in place when the AI ends the battle", () => {
-    const root = mountRun([trap]);
+    const root = mountRun([trap], 10);
     tap(root, 10);
     tap(root, 6);
     click(root, "[data-reset]");
@@ -299,5 +301,50 @@ describe("roguelike run in the UI", () => {
     vi.runAllTimers();
     expect(turnText(root)).toContain("남쪽");
     expect(turnText(root)).toContain("1수");
+  });
+
+  it("shows both HQs in a run and lowers the enemy HQ after a capture", () => {
+    const chickHunt: StageDefinition = {
+      id: "test-hp", tier: "normal", aiDepth: 1, enemyHp: 10, enemyHand: [],
+      enemyBoard: [{ row: 0, column: 1, kind: "lion" }, { row: 2, column: 0, kind: "chick" }],
+    };
+    const root = mountRun([chickHunt]);
+    const label = (side: string) => root.querySelector(`.hq--${side}`)?.getAttribute("aria-label") ?? "";
+    expect(label("north")).toBe("북쪽 본진 HP 10/10");
+    expect(label("south")).toBe("남쪽 본진 HP 15/15");
+    tap(root, 9);
+    tap(root, 6);
+    expect(label("north")).toBe("북쪽 본진 HP 8/10");
+    expect(root.querySelector(".game__event")?.textContent).toContain("북쪽 본진 2 피해");
+  });
+
+  it("marks a lion that came back from capture as stunned until the player's next move", () => {
+    const sturdy: StageDefinition = {
+      id: "test-stun", tier: "normal", aiDepth: 1, enemyHp: 15, enemyHand: [],
+      enemyBoard: [{ row: 2, column: 0, kind: "lion" }, { row: 0, column: 0, kind: "chick" }],
+    };
+    const root = mountRun([sturdy]);
+    tap(root, 9);
+    tap(root, 6);
+    // The AI can only move its chick; on the player's turn the lion is still stunned.
+    vi.runAllTimers();
+    expect(turnText(root)).toContain("남쪽");
+    const returned = root.querySelector<HTMLButtonElement>('[data-cell="1"]');
+    expect(returned?.getAttribute("aria-label")).toContain("(기절)");
+    expect(returned?.querySelector(".piece__status")?.textContent).toBe("기절");
+  });
+
+  it("keeps the player's last move on screen after the AI answers", () => {
+    const root = mountRun();
+    playSouthMove(root);
+    vi.runAllTimers();
+    expect(root.querySelector(".game__event-previous")?.textContent).toContain("남쪽:");
+    expect(root.querySelector(".game__event")?.textContent).toContain("북쪽:");
+  });
+
+  it("hides HQs in the classic modes", () => {
+    const root = mountRun();
+    choose(root, "mode", "local");
+    expect(root.querySelector(".hq")).toBeNull();
   });
 });

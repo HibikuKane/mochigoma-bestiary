@@ -1,11 +1,12 @@
 import {
   fromIndex, samePosition, toIndex,
-  type GameAction, type GameState, type Piece, type PieceKind,
+  type GameAction, type GameEvent, type GameState, type Piece, type PieceKind,
   type Player, type Position, type Selection,
 } from "../core/model";
 import type { Ruleset } from "../core/ruleset";
 import { classicRuleset } from "../rules/classic";
 import { createRoguelikeRuleset } from "../rules/roguelike";
+import { effectiveAtk } from "../rules/pieceData";
 import { createAiOpponent, standardClassicProfile, type SearchResult } from "../ai";
 import { battleSetup, chooseReward, currentStage, finishBattle, startRun, type RunState } from "../run/run";
 import { STAGES, type StageDefinition } from "../run/stages";
@@ -35,6 +36,8 @@ function escape(value: string): string {
 export interface LabAppOptions {
   /** Stage table for runs. Tests pass short ones; the game uses STAGES. */
   readonly stages?: ReadonlyArray<StageDefinition>;
+  /** Player HQ HP for runs. Tests lower it; the game uses PLAYER_HP. */
+  readonly playerHp?: number;
 }
 
 export class LabApp {
@@ -47,12 +50,19 @@ export class LabApp {
   private battleRuleset: Ruleset;
   private battleState: GameState;
   private readonly stages: ReadonlyArray<StageDefinition>;
+  private readonly playerHp: number | undefined;
   private selection: Selection | null = null;
   private locale: Locale = loadLocale(navigator.languages, () => window.localStorage);
   private confirmRestart = false;
   private mode: GameMode = "run";
   /** Set when a battle has just ended, so the next render brings the run panel into view. */
   private focusRunPanel = false;
+  /**
+   * The run battle's last two events, oldest first. The AI answers within a
+   * moment, so showing only the latest event would hide what the player's own
+   * move caused, such as damage from an enemy lion holding the far rank.
+   */
+  private recentEvents: GameEvent[] = [];
   /** Provisional development control; see SEARCH_DEPTHS. */
   private searchDepth = standardClassicProfile.searchDepth;
   private thinking = false;
@@ -64,7 +74,8 @@ export class LabApp {
 
   constructor(private readonly root: HTMLElement, options: LabAppOptions = {}) {
     this.stages = options.stages ?? STAGES;
-    this.run = startRun(Date.now() >>> 0, this.stages);
+    this.playerHp = options.playerHp;
+    this.run = startRun(Date.now() >>> 0, this.stages, this.playerHp);
     this.battleRuleset = createRoguelikeRuleset(battleSetup(this.run));
     this.battleState = this.battleRuleset.createInitialState();
     this.root.addEventListener("click", (event) => this.handleClick(event));
@@ -108,6 +119,7 @@ export class LabApp {
   private commit(next: GameState): void {
     this.state = next;
     if (this.mode !== "run") return;
+    this.recentEvents = [...this.recentEvents, next.lastEvent].slice(-2);
     const before = this.run.phase;
     this.run = finishBattle(this.run, next.result);
     // The reward or result panel sits below the board, often off screen on a
@@ -129,10 +141,11 @@ export class LabApp {
     this.selection = null;
     this.confirmRestart = false;
     this.focusRunPanel = false;
+    this.recentEvents = [];
   }
 
   private startNewRun(): void {
-    this.run = startRun(Date.now() >>> 0, this.stages);
+    this.run = startRun(Date.now() >>> 0, this.stages, this.playerHp);
     this.beginBattle();
   }
 
@@ -249,7 +262,7 @@ export class LabApp {
         material: result.breakdown.material, mobility: result.breakdown.mobility,
         boardControl: result.breakdown.boardControl, lionSafety: result.breakdown.lionSafety,
         tryProgress: result.breakdown.tryProgress, lionCapture: result.breakdown.lionCapture,
-        total: result.breakdown.total,
+        lionThreat: result.breakdown.lionThreat, hqHp: result.breakdown.hqHp, total: result.breakdown.total,
       },
     });
   }
@@ -328,10 +341,25 @@ export class LabApp {
   }
 
   private pieceMarkup(piece: Piece): string {
-    return `<span class="piece piece--${piece.owner}" aria-hidden="true">
+    return `<span class="piece piece--${piece.owner}${piece.stunned ? " piece--stunned" : ""}" aria-hidden="true">
       <span class="piece__glyph">${GLYPHS[piece.kind]}</span>
       <span class="piece__name">${escape(this.messages.pieces[piece.kind])}</span>
+      ${piece.stunned ? `<span class="piece__status">${escape(this.messages.stunned)}</span>` : ""}
     </span>`;
+  }
+
+  /** HQ HP of one side, shown only in HP battles. */
+  private renderHq(player: Player): string {
+    const hq = this.state.hq?.[player];
+    if (!hq) return "";
+    const m = this.messages;
+    const label = m.hq(m.sides[player], hq.hp, hq.maxHp);
+    const percent = Math.round((hq.hp / hq.maxHp) * 100);
+    return `<div class="hq hq--${player}${hq.hp * 3 <= hq.maxHp ? " is-low" : ""}" role="meter" aria-label="${escape(label)}"
+      aria-valuemin="0" aria-valuemax="${hq.maxHp}" aria-valuenow="${hq.hp}">
+      <span class="hq__label">${escape(label)}</span>
+      <span class="hq__bar" aria-hidden="true"><span class="hq__fill" style="width: ${percent}%"></span></span>
+    </div>`;
   }
 
   private renderHand(player: Player): string {
@@ -357,7 +385,9 @@ export class LabApp {
       const position = fromIndex(index);
       const selected = this.selection?.type === "board" && samePosition(this.selection.position, position);
       const legal = actions.some((action) => samePosition(action.to, position));
-      const occupant = piece ? `${m.sides[piece.owner]} ${m.pieces[piece.kind]}` : m.emptySquare;
+      const occupant = piece
+        ? `${m.sides[piece.owner]} ${m.pieces[piece.kind]}${piece.stunned ? ` (${m.stunned})` : ""}`
+        : m.emptySquare;
       const label = m.square(position.row + 1, position.column + 1, occupant, legal);
       return `<button class="board__cell${selected ? " is-selected" : ""}${legal ? " is-legal" : ""}${legal && piece ? " is-capture" : ""}"
         data-cell="${index}" data-focus="cell-${index}" aria-label="${escape(label)}" aria-pressed="${Boolean(selected)}"
@@ -376,7 +406,8 @@ export class LabApp {
     if (!piece) return "";
     const hint = this.selectedActions().length === 0 ? m.noTargets
       : selection.type === "hand" ? m.dropHint : m.movement[piece.kind];
-    return `<strong>${escape(m.selected(m.pieces[piece.kind]))}</strong><p>${escape(hint)}</p>`;
+    const name = this.state.hq ? `${m.pieces[piece.kind]} · ${m.atk(effectiveAtk(piece))}` : m.pieces[piece.kind];
+    return `<strong>${escape(m.selected(name))}</strong><p>${escape(hint)}</p>`;
   }
 
   private modeLine(): string {
@@ -449,6 +480,8 @@ export class LabApp {
         <section class="game" aria-label="${escape(m.title)}">
           <div class="game__status"><div role="status" aria-live="polite" aria-atomic="true">
             <h2 class="game__turn">${escape(this.resultText())}</h2>
+            ${this.mode === "run" && this.recentEvents.length === 2
+              ? `<p class="game__event-previous">${escape(formatEvent(this.recentEvents[0], m))}</p>` : ""}
             <p class="game__event">${escape(formatEvent(this.state.lastEvent, m))}</p>
             ${this.thinking ? `<p class="game__thinking">${escape(m.aiThinking)}</p>` : ""}
           </div><button class="reset-button" data-reset data-focus="reset">${escape(restartLabel)}</button></div>
@@ -458,7 +491,7 @@ export class LabApp {
               <button data-confirm-reset data-focus="confirm-reset">${escape(restartLabel)}</button>
             </div></section>` : ""}
           ${this.mode === "run" ? this.renderRunStatus() : ""}
-          ${this.renderHand("north")}${this.renderBoard()}${this.renderHand("south")}
+          ${this.renderHq("north")}${this.renderHand("north")}${this.renderBoard()}${this.renderHand("south")}${this.renderHq("south")}
           ${this.mode === "run" ? this.renderRunPanel() : ""}
           <div class="selection-hint" aria-live="polite">${this.state.result.type === "playing" ? this.selectionHint() : `<p>${escape(this.resultText())}</p>`}</div>
         </section>

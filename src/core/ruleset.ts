@@ -13,6 +13,11 @@ export interface PositionAnalysis {
   lionSquare(board: Board, owner: Player): number | null;
   /** Row the player's lion must reach for a try. */
   tryRank(player: Player): number;
+  /**
+   * HQ damage for capturing a lion, for rulesets where that does not end the
+   * battle outright. Absent means a lion capture is decisive.
+   */
+  readonly lionCaptureDamage?: number;
 }
 
 export interface Ruleset {

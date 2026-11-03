@@ -24,6 +24,7 @@ h1 { margin: 0; font-size: clamp(1.5rem, 4.5vw, 2.3rem); line-height: 1.25; lett
 .topbar__controls { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 18px; }
 .language-control, .mode-control, .depth-control { display: flex; align-items: center; gap: 10px; font-size: .8rem; }
 .language-control label, .mode-control label, .depth-control label { color: var(--muted); }
+.game__event-previous { margin: 6px 0 0; color: #8f9888; font-size: .74rem; line-height: 1.6; }
 .game__thinking { color: var(--muted); margin: 6px 0 0; font-size: .82rem; }
 select { min-height: 44px; padding: 8px 28px 8px 12px; border: 1px solid var(--line); background: #20291f; border-radius: 8px; }
 .play-layout { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(0, .85fr); align-items: start; gap: 24px; }
@@ -71,6 +72,16 @@ select { min-height: 44px; padding: 8px 28px 8px 12px; border: 1px solid var(--l
 .run-status__roster { display: flex; align-items: center; gap: 8px; min-width: 0; font-size: .72rem; color: var(--muted); }
 .run-status__roster ul { display: flex; flex-wrap: wrap; gap: 2px; margin: 0; padding: 0; list-style: none; }
 .run-status__roster li { font-size: 1.15rem; line-height: 1; }
+.hq { width: min(100%, 390px); display: grid; gap: 4px; }
+.hq__label { font-size: .74rem; color: var(--muted); }
+.hq__bar { display: block; height: 10px; overflow: hidden; border-radius: 5px; background: #2c3529; border: 1px solid var(--line); }
+.hq__fill { display: block; height: 100%; background: var(--accent); }
+.hq--north .hq__fill { background: var(--blue); }
+.hq.is-low .hq__label { color: #f0a37f; }
+.hq.is-low .hq__fill { background: #e0784f; }
+.piece { position: relative; }
+.piece--stunned { filter: grayscale(.7); opacity: .8; }
+.piece__status { position: absolute; bottom: 2px; padding: 0 4px; border-radius: 4px; background: #20180fcc; color: #fff; font-size: .55rem; font-weight: 700; }
 .run-panel { width: min(100%, 390px); display: grid; gap: 10px; padding: 14px; border: 1px solid var(--accent); border-radius: 10px; background: #243020; }
 .run-panel h3 { margin: 0; font-size: 1rem; line-height: 1.5; }
 .run-panel h3:focus { outline: none; }
