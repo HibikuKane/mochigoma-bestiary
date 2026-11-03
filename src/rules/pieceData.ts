@@ -94,7 +94,7 @@ export function effectiveAtk(piece: Pick<Piece, "kind" | "fusionAtk" | "combatAt
  * gained permanently.
  */
 export function capturedForm(piece: Piece, captor: Player): Piece {
-  const { combatAtk: _discarded, ...rest } = piece;
+  const { combatAtk: _discarded, stunned: _cleared, ...rest } = piece;
   return { ...rest, owner: captor, kind: piece.kind === "hen" ? "chick" : piece.kind };
 }
 
@@ -105,5 +105,6 @@ export function pieceSignature(piece: Piece): string {
     : "";
   const fusion = piece.fusionAtk ? `f${piece.fusionAtk}` : "";
   const combat = piece.combatAtk ? `c${piece.combatAtk}` : "";
-  return `${piece.owner[0]}:${piece.kind}${extras}${fusion}${combat}`;
+  const stunned = piece.stunned ? "z" : "";
+  return `${piece.owner[0]}:${piece.kind}${extras}${fusion}${combat}${stunned}`;
 }

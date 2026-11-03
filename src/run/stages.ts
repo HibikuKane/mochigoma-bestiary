@@ -21,7 +21,12 @@ export interface StageDefinition {
   readonly enemyHand: ReadonlyArray<PieceKind>;
   /** AI search depth for this battle. */
   readonly aiDepth: number;
+  /** Enemy HQ HP (spec §4.3). */
+  readonly enemyHp: number;
 }
+
+/** Player HQ HP, restored to full before every battle (spec §4.3, provisional). */
+export const PLAYER_HP = 15;
 
 /** North's original squares, so early enemies are the classic setup with pieces missing. */
 const LION = { row: 0, column: 1, kind: "lion" } as const;
@@ -30,10 +35,10 @@ const ELEPHANT = { row: 0, column: 0, kind: "elephant" } as const;
 const GIRAFFE = { row: 0, column: 2, kind: "giraffe" } as const;
 
 export const STAGES: ReadonlyArray<StageDefinition> = [
-  { id: "normal-1", tier: "normal", enemyBoard: [LION, CHICK], enemyHand: [], aiDepth: 1 },
-  { id: "normal-2", tier: "normal", enemyBoard: [LION, CHICK, ELEPHANT], enemyHand: [], aiDepth: 2 },
-  { id: "elite-1", tier: "elite", enemyBoard: [LION, CHICK, ELEPHANT, GIRAFFE], enemyHand: [], aiDepth: 3 },
-  { id: "boss-1", tier: "boss", enemyBoard: [LION, CHICK, ELEPHANT, GIRAFFE], enemyHand: ["chick"], aiDepth: 4 },
+  { id: "normal-1", tier: "normal", enemyBoard: [LION, CHICK], enemyHand: [], aiDepth: 1, enemyHp: 10 },
+  { id: "normal-2", tier: "normal", enemyBoard: [LION, CHICK, ELEPHANT], enemyHand: [], aiDepth: 2, enemyHp: 10 },
+  { id: "elite-1", tier: "elite", enemyBoard: [LION, CHICK, ELEPHANT, GIRAFFE], enemyHand: [], aiDepth: 3, enemyHp: 15 },
+  { id: "boss-1", tier: "boss", enemyBoard: [LION, CHICK, ELEPHANT, GIRAFFE], enemyHand: ["chick"], aiDepth: 4, enemyHp: 25 },
 ];
 
 /** Reward choices after a won battle. P2 offers plain base pieces only (spec §5, H-6). */

@@ -1,4 +1,4 @@
-import type { PieceKind, Player } from "../core/model";
+import type { PieceKind, Player, WinReason } from "../core/model";
 import type { StageTier } from "../run/stages";
 import type { GameMode } from "../ui/mode";
 
@@ -33,7 +33,7 @@ export interface Messages {
   sides: Record<Player, string>;
   pieces: Record<PieceKind, string>;
   movement: Record<PieceKind, string>;
-  reasons: Record<"capture" | "try" | "no-actions", string>;
+  reasons: Record<WinReason, string>;
   draw: string;
   turn: (side: string, move: number) => string;
   win: (side: string, reason: string) => string;
@@ -57,4 +57,10 @@ export interface Messages {
   runDraw: (stage: number) => string;
   newRun: string;
   restartRunQuestion: string;
+  hq: (side: string, hp: number, max: number) => string;
+  damage: (side: string, amount: number) => string;
+  respawn: (side: string) => string;
+  tryDamage: (attacker: string, defender: string, amount: number) => string;
+  stunned: string;
+  atk: (value: number) => string;
 }

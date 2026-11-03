@@ -201,7 +201,8 @@ describe("evaluation", () => {
   it("reports a breakdown whose terms add up to the total", () => {
     const breakdown = evaluator.explain(classicRuleset.createInitialState(), "south");
     expect(breakdown.material + breakdown.mobility + breakdown.boardControl
-      + breakdown.lionSafety + breakdown.tryProgress + breakdown.lionCapture).toBe(breakdown.total);
+      + breakdown.lionSafety + breakdown.tryProgress + breakdown.lionCapture
+      + breakdown.lionThreat + breakdown.hqHp).toBe(breakdown.total);
   });
 });
 
@@ -211,7 +212,7 @@ describe("profile swapping", () => {
     weights: {
       material: { lion: 0, giraffe: 380, elephant: 350, chick: 100, hen: 450 },
       materialInHand: { lion: 0, giraffe: 420, elephant: 385, chick: 110, hen: 495 },
-      mobility: 0, boardControl: 0, lionSafety: 0, tryProgress: 0, lionCapture: 0,
+      mobility: 0, boardControl: 0, lionSafety: 0, tryProgress: 0, lionCapture: 0, lionThreat: 0, hqHp: 0,
     },
   };
   const tryRush: EvaluationProfile = {

@@ -23,6 +23,8 @@ export interface Piece {
   readonly fusionAtk?: number;
   /** ATK gained for the current battle only; cleared when the piece is captured. */
   readonly combatAtk?: number;
+  /** A respawned lion: cannot move and cannot be captured until its owner's turn ends. */
+  readonly stunned?: boolean;
 }
 
 export interface Position {
@@ -37,16 +39,33 @@ export interface Hands {
   readonly south: ReadonlyArray<Piece>;
 }
 
+export type WinReason = "capture" | "try" | "no-actions" | "hp";
+
 export type GameResult =
   | { readonly type: "playing" }
-  | { readonly type: "win"; readonly winner: Player; readonly reason: "capture" | "try" | "no-actions" }
+  | { readonly type: "win"; readonly winner: Player; readonly reason: WinReason }
   | { readonly type: "draw"; readonly reason: "repetition" };
 
 export type GameEvent =
   | { readonly type: "start"; readonly player: Player }
-  | { readonly type: "move"; readonly player: Player; readonly piece: PieceKind; readonly captured: PieceKind | null; readonly promoted: boolean }
-  | { readonly type: "drop"; readonly player: Player; readonly piece: PieceKind }
+  | ({ readonly type: "move"; readonly player: Player; readonly piece: PieceKind; readonly captured: PieceKind | null; readonly promoted: boolean } & HqEffects)
+  | ({ readonly type: "drop"; readonly player: Player; readonly piece: PieceKind } & HqEffects)
   | Exclude<GameResult, { readonly type: "playing" }>;
+
+/** HQ effects of one action, reported with the move or drop (roguelike only). */
+export interface HqEffects {
+  /** Damage the acting side dealt to the opposing HQ. */
+  readonly damage?: number;
+  /** The opposing lion was captured and returned to its back rank, stunned. */
+  readonly respawned?: boolean;
+  /** Damage the next side's lion dealt at its turn start for holding the far rank. */
+  readonly tryDamage?: number;
+}
+
+export interface Hq {
+  readonly hp: number;
+  readonly maxHp: number;
+}
 
 export interface GameState {
   readonly board: Board;
@@ -56,6 +75,13 @@ export interface GameState {
   readonly history: ReadonlyArray<string>;
   readonly moveNumber: number;
   readonly lastEvent: GameEvent;
+  /**
+   * Roguelike only: each side's HQ. When present, battles are decided by HQ HP
+   * instead of an immediate lion capture or try (docs/roguelike-spec.md §4.3).
+   */
+  readonly hq?: Readonly<Record<Player, Hq>>;
+  /** Roguelike only: state of the seeded random source (spec §3). */
+  readonly rng?: number;
 }
 
 export type Selection =

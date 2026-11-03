@@ -37,6 +37,10 @@ export interface EvaluationWeights {
    * still ranks higher. Never non-zero in the classic ruleset.
    */
   readonly lionCapture: number;
+  /** Side to move can take the other lion, and that HQ survives the damage. */
+  readonly lionThreat: number;
+  /** Per point of HQ HP advantage (HP battles only). */
+  readonly hqHp: number;
 }
 
 /**
@@ -71,5 +75,9 @@ export const standardClassicProfile: EvaluationProfile = {
     lionSafety: 12,
     tryProgress: 15,
     lionCapture: 100_000,
+    // HP decides HP battles, so one point is worth a chick.
+    // A hanging lion that does not lose the battle is worth its 10 damage.
+    lionThreat: 1000,
+    hqHp: 100,
   },
 };

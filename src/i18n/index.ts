@@ -1,4 +1,4 @@
-import type { GameEvent } from "../core/model";
+import { opponentOf, type GameEvent, type HqEffects, type Player } from "../core/model";
 import { en } from "./en";
 import { ja } from "./ja";
 import { ko } from "./ko";
@@ -35,6 +35,16 @@ export function saveLocale(locale: Locale, getStorage: () => Pick<Storage, "setI
   try { getStorage().setItem(LOCALE_STORAGE_KEY, locale); } catch { /* Session-only preference. */ }
 }
 
+/** Appends the HQ effects of an action (roguelike HP battles) to its sentence. */
+function withHqEffects(text: string, actor: Player, effects: HqEffects, messages: Messages): string {
+  const rival = messages.sides[opponentOf(actor)];
+  const parts = [text];
+  if (effects.damage) parts.push(messages.damage(rival, effects.damage));
+  if (effects.respawned) parts.push(messages.respawn(rival));
+  if (effects.tryDamage) parts.push(messages.tryDamage(rival, messages.sides[actor], effects.tryDamage));
+  return parts.join(" ");
+}
+
 export function formatEvent(event: GameEvent, messages: Messages): string {
   switch (event.type) {
     case "start": return messages.start(messages.sides[event.player]);
@@ -44,9 +54,11 @@ export function formatEvent(event: GameEvent, messages: Messages): string {
       const text = event.captured
         ? messages.captured(side, piece, messages.pieces[event.captured])
         : messages.moved(side, piece);
-      return event.promoted ? `${text} ${messages.promotion}` : text;
+      return withHqEffects(event.promoted ? `${text} ${messages.promotion}` : text, event.player, event, messages);
     }
-    case "drop": return messages.dropped(messages.sides[event.player], messages.pieces[event.piece]);
+    case "drop":
+      return withHqEffects(
+        messages.dropped(messages.sides[event.player], messages.pieces[event.piece]), event.player, event, messages);
     case "win": return messages.win(messages.sides[event.winner], messages.reasons[event.reason]);
     case "draw": return messages.draw;
   }
