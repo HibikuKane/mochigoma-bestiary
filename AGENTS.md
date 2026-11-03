@@ -14,10 +14,10 @@ This repository builds Mochigoma Bestiary, a web roguelike that uses twelve-shog
 
 ## Start and handoff
 
-- Read [project goals](docs/project-goals.md), [roadmap](docs/roadmap.md), and the current [handoff](docs/handoff.md). Inspect the actual remote branch/PR state before trusting a dated snapshot.
+- Read [project goals](docs/project-goals.md), [roadmap](docs/roadmap.md), [roguelike spec](docs/roguelike-spec.md), and the current [handoff](docs/handoff.md). Inspect the actual remote branch/PR state before trusting a dated snapshot.
 - For implementation or task handoff, use [twelve-shogi-change](.agents/skills/twelve-shogi-change/SKILL.md). For an independent PR review, use [twelve-shogi-review](.agents/skills/twelve-shogi-review/SKILL.md). If the harness does not discover repository skills automatically, read these files directly.
 - Skills live in `.agents/skills/`; `.claude/skills/` is a symlink to it so Claude Code discovers the same files. [CLAUDE.md](CLAUDE.md) only points back here. Add or edit a skill in `.agents/skills/` and never keep a second copy under `.claude/`.
-- Keep binding rules here, workflow detail in `CONTRIBUTING.md`, goals in `project-goals.md`, priorities in `roadmap.md`, and dated facts in `handoff.md`. Update the relevant source instead of copying the same plan everywhere.
+- Keep binding rules here, workflow detail in `CONTRIBUTING.md`, goals in `project-goals.md`, gameplay rule specs in `roguelike-spec.md`, priorities in `roadmap.md`, and dated facts in `handoff.md`. Update the relevant source instead of copying the same plan everywhere.
 - At session end, record the branch/PR, what is merged versus proposed, tests actually run, remaining uncertainty, and the next bounded task. Do not infer deployment success from a commit or build.
 
 ## Architecture
@@ -30,7 +30,7 @@ This repository builds Mochigoma Bestiary, a web roguelike that uses twelve-shog
 - Preserve usable mobile touch targets and keyboard-visible focus states.
 - Keep all in-game copy in `src/i18n/` with matching Korean, Japanese and English entries. Game rules emit typed `GameEvent` data, never localized sentences. Switching locale must preserve the current match and selection.
 - Keep development plans and speculative experiments in documents; only expose functioning player controls and relevant help in-game.
-- Keep future run state (roster, stage, rewards) separate from single-match `GameState`. Early-stage enemies should start with fewer pieces than the player; exact setups are still undecided.
+- Keep future run state (roster, stage, rewards) separate from single-match `GameState`. Early-stage enemies should start with fewer pieces than the player; current setups are provisional (see [roguelike spec](docs/roguelike-spec.md)).
 
 ## Experiments
 
